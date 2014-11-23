@@ -55,10 +55,9 @@ INCLUDE_OUTLINES=false
 if [ ! -e $IMAGE_FOLDER ];then mkdir $IMAGE_FOLDER || { echo "Could not find images folder" ; exit; } fi
 if [ ! -e $GERBER_FOLDER ];then mkdir $GERBER_FOLDER || { echo "Could not find gerber folder" ; exit; } fi
 
-
 #Check with Git for a list of added or modified boards, then strip off git data from the filename 
 #FIXME Does not handle filenames with spaces very well.
-for BOARD in $(git status -s|grep "^\(A \| M\).*.brd" |sed 's/^[ AM]* //');do
+for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 	echo Processing $BOARD
 
 	BOARD=$(basename $BOARD) 
