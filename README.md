@@ -21,3 +21,5 @@ Installation
 ------------
 
 Copy the pre-commit and post-commit files into your .git/hooks folder, and optionally edit the pre-commit file to include any pathnames.  You'll also want to run `mkdir gerber-previews` and `git add gerber-previews`, since the script won't do this automatically.
+
+Notes: brew install rename

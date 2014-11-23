@@ -65,7 +65,7 @@ for BOARD in $(git status -s|grep "^\(A \| M\).*.brd" |sed 's/^[ AM]* //');do
 	NAME=$(basename $BOARD .brd)
 	
 	#For generating visual diffs, we need both new and old versions to exist, so generate a folder to put them in
-	OUTPUTDIR=$(mktemp -d)
+	OUTPUTDIR=$(mktemp -d -t visualdiff-outputdir) #add the -t to make this work on mac
 	
 	echo Operating on $BOARD using name $NAME
 
@@ -108,17 +108,18 @@ for BOARD in $(git status -s|grep "^\(A \| M\).*.brd" |sed 's/^[ AM]* //');do
 	#remove leading zeroes, which will make bash maths angry
 	
 	#We need to process the board outline, so it's in a known and reliable state
-	TEMPOUTLINE=$(tempfile -s .boardoutline.ger)
+	which tempfile > /dev/null && TEMPOUTLINE=$(tempfile -s .boardoutline.ger) #tempfile doesnt exist on mac
+  which mktemp > /dev/null  && TEMPOUTLINE=$(mktemp -t "boardoutline.ger") || exit # if we dont have this either then fail out
 	gerbv -x rs274x -o $TEMPOUTLINE "$GERBER_FOLDER/$NAME.boardoutline.ger"
 	
 	#Get min X
-	MINX=$(cat $TEMPOUTLINE |grep -e '^G'  |grep -Po "X[0-9]+" |sed 's/X//g' |sort -n |head -n1 )
+	MINX=$(cat $TEMPOUTLINE |grep -e '^G'  |grep -o "X[0-9]\+" |sed 's/X//g' |sort -n |head -n1 )
 	#Get max X
-	MAXX=$(cat $TEMPOUTLINE |grep -e '^G'  |grep -Po "X[0-9]+" |sed 's/X//g' |sort -n |tail -n1)
+	MAXX=$(cat $TEMPOUTLINE |grep -e '^G'  |grep -o "X[0-9]\+" |sed 's/X//g' |sort -n |tail -n1)
 	#get min Y
-	MINY=$(cat $TEMPOUTLINE |grep -e '^G'  |grep -Po "Y[0-9]+" |sed 's/Y//g' |sort -n |head -n1 )
+	MINY=$(cat $TEMPOUTLINE |grep -e '^G'  |grep -o "Y[0-9]\+" |sed 's/Y//g' |sort -n |head -n1 )
 	#get max Y
-	MAXY=$(cat $TEMPOUTLINE |grep -e '^G'  |grep -Po "Y[0-9]+" |sed 's/Y//g' |sort -n |tail -n1)
+	MAXY=$(cat $TEMPOUTLINE |grep -e '^G'  |grep -o "Y[0-9]\+" |sed 's/Y//g' |sort -n |tail -n1)
 	echo "Bounds (mil)= ($MINX,$MINY) to ($MAXX,$MAXY)"
 	
 	#clean up, we don't need it past here
