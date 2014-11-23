@@ -52,8 +52,8 @@ INCLUDE_OUTLINES=false
 ###############################
 
 #Verify that the folders are there, or try to make them if they're just missing
-if [ ! -e $IMAGE_FOLDER ];then mkdir $IMAGE_FOLDER || {echo "Could not find images folder" ; exit} ; fi
-if [ ! -e $GERBER_FOLDER ];then mkdir $GERBER_FOLDER || {echo "Could not find gerber folder" ; exit} ; fi
+if [ ! -e $IMAGE_FOLDER ];then mkdir $IMAGE_FOLDER || { echo "Could not find images folder" ; exit; } fi
+if [ ! -e $GERBER_FOLDER ];then mkdir $GERBER_FOLDER || { echo "Could not find gerber folder" ; exit; } fi
 
 
 #Check with Git for a list of added or modified boards, then strip off git data from the filename 
