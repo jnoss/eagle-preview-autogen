@@ -16,7 +16,7 @@ GEN_VISUAL_DIFFS=true
 
 #Ensure we have the tool for our visual diff
 IMAGEMAGICK_COMPOSITE=composite
-if ! $IMAGEMAGICK_COMPOSITE -version;then 
+if ! $IMAGEMAGICK_COMPOSITE -version;then
 	echo "ImageMagick not found, disabling visual diffs"
 	GEN_VISUAL_DIFFS=false;
 fi
@@ -55,17 +55,17 @@ INCLUDE_OUTLINES=false
 if [ ! -e $IMAGE_FOLDER ];then mkdir $IMAGE_FOLDER || { echo "Could not find images folder" ; exit; } fi
 if [ ! -e $GERBER_FOLDER ];then mkdir $GERBER_FOLDER || { echo "Could not find gerber folder" ; exit; } fi
 
-#Check with Git for a list of added or modified boards, then strip off git data from the filename 
+#Check with Git for a list of added or modified boards, then strip off git data from the filename
 #FIXME Does not handle filenames with spaces very well.
 for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 	echo Processing $BOARD
 
-	BOARD=$(basename $BOARD) 
+	BOARD=$(basename $BOARD)
 	NAME=$(basename $BOARD .brd)
-	
+
 	#For generating visual diffs, we need both new and old versions to exist, so generate a folder to put them in
 	OUTPUTDIR=$(mktemp -d -t visualdiff-outputdir) #add the -t to make this work on mac
-	
+
 	echo Operating on $BOARD using name $NAME
 
 	{ #Shove into a CAM processor in Eagle
@@ -75,10 +75,10 @@ for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 	#-N Suppress erros
 	#-d device
 	#-o output filename
-	
+
 	echo "Generating board outline"
 	$EAGLE -X -N -d GERBER_RS274X -o "$GERBER_FOLDER/$NAME.boardoutline.ger" $BOARD Dimension Milling  2>/dev/null
-	
+
 	echo "Generating Drill file"
 	$EAGLE -X -N -d EXCELLON -o "$GERBER_FOLDER/$NAME.drills.xln" $BOARD Drills Holes 2>/dev/null
 
@@ -86,18 +86,18 @@ for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 	$EAGLE -X -N -d GERBER_RS274X -o "$GERBER_FOLDER/$NAME.toplayer.ger" $BOARD Top Pads Vias 2>/dev/null
 	$EAGLE -X -N -d GERBER_RS274X -o "$GERBER_FOLDER/$NAME.topstopmask.ger" $BOARD tStop 2>/dev/null
 	$EAGLE -X -N -d GERBER_RS274X -o "$GERBER_FOLDER/$NAME.topsilkscreen.ger" $BOARD tPlace tNames 2>/dev/null
-	
+
 	echo "Generating bottom layers"
 	$EAGLE -X -N -d GERBER_RS274X -o "$GERBER_FOLDER/$NAME.bottomlayer.ger" $BOARD Bottom Pads Vias 2>/dev/null
 	$EAGLE -X -N -d GERBER_RS274X -o "$GERBER_FOLDER/$NAME.bottomstopmask.ger" $BOARD bStop 2>/dev/null
 	$EAGLE -X -N -d GERBER_RS274X -o "$GERBER_FOLDER/$NAME.bottomsilkscreen.ger" $BOARD bPlace bName 2>/dev/null
 	}
-	
-	#Assuming no errors, because hell yeeah bitches. 
+
+	#Assuming no errors, because hell yeeah bitches.
 	#Probably should detect those and return 1, which will stop the commit until things get fixed.
-	
+
 	{ # Generate board extents
-	#These all work on the same horribly inefficient principal, because I'm lazy. I'm 100% sure if I did a line-by-line comparison, it'd be orders of magnitude more effient. 
+	#These all work on the same horribly inefficient principal, because I'm lazy. I'm 100% sure if I did a line-by-line comparison, it'd be orders of magnitude more effient.
 	# Take the processed gerber output,
 	#Search for the draw command
 	#grab the appropriate coordinate type
@@ -105,12 +105,12 @@ for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 	#sort the data
 	#Take the top or bottom line
 	#remove leading zeroes, which will make bash maths angry
-	
+
 	#We need to process the board outline, so it's in a known and reliable state
 	which tempfile > /dev/null && TEMPOUTLINE=$(tempfile -s .boardoutline.ger) #tempfile doesnt exist on mac
   which mktemp > /dev/null  && TEMPOUTLINE=$(mktemp -t "boardoutline.ger") || exit # if we dont have this either then fail out
 	gerbv -x rs274x -o $TEMPOUTLINE "$GERBER_FOLDER/$NAME.boardoutline.ger"
-	
+
 	#Get min X
 	MINX=$(cat $TEMPOUTLINE |grep -e '^G'  |grep -o "X[0-9]\+" |sed 's/X//g' |sort -n |head -n1 )
 	#Get max X
@@ -120,11 +120,11 @@ for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 	#get max Y
 	MAXY=$(cat $TEMPOUTLINE |grep -e '^G'  |grep -o "Y[0-9]\+" |sed 's/Y//g' |sort -n |tail -n1)
 	echo "Bounds (mil)= ($MINX,$MINY) to ($MAXX,$MAXY)"
-	
+
 	#clean up, we don't need it past here
 	rm $TEMPOUTLINE
 	}
-	
+
 	{ #Do some maths
 	#GerbV makes everything 3:4 precision, so we need to break that up into floating point
 	fMINX=$(echo $MINX|sed -e 's/\(...\)\(....\)/\1.\2/')
@@ -139,7 +139,7 @@ for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 	echo "Board size (in) = $BOARDWIDTH x $BOARDHEIGHT"
 
 	#DPI=500 #In user adjustable settings up top
-	
+
 	#If we want to cap the image sizes, we'll need to lower the DPI a bit. Let's try for that
 	#Since this is in pixels, we're dropping the floating point
 	IMAGEWIDTH=$(echo "$BOARDWIDTH*$DPI" |bc |sed 's/\..*//')
@@ -149,7 +149,7 @@ for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 		echo "$DPI"
 
 	fi
-	
+
 	#Since this calculates with the "new" DPI if we have it, we can assert that the image will be below both maximums
 	IMAGEHEIGHT=$(echo "$BOARDHEIGHT*$DPI" |bc |sed 's/\..*//' )
 	if [ $IMAGEHEIGHT -gt $MAXIMAGEHEIGHT ] ;then
@@ -157,27 +157,27 @@ for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 		DPI=$(echo $DPI*$MAXIMAGEHEIGHT/$IMAGEHEIGHT |bc)
 		echo "$DPI"
 	fi
-	
+
 	#Now, provide GerbV with all the data it needs to provide the exact image frame that we want
 	# In order to crop the image (which we want to do), we need to provide GerbV with both a DPI and the window size
 	IMAGE_SIZE="--origin=${fMINX}x${fMINY} --dpi=$DPI --window_inch=${BOARDWIDTH}x${BOARDHEIGHT} --antialias"
 
 	}
-	
-	
+
+
 	{ echo "Generating outline and drill images"
 	OUTLINE="-f "$OUTLINECOLOR" $GERBER_FOLDER/$NAME.boardoutline.ger"
-	
+
 	#Process requests to include outlines on the individual layers
 	if [ "$INCLUDE_OUTLINES" = "true" ] ;then
 		INCLUDE_OUTLINES="$OUTLINE"
 	else
 		INCLUDE_OUTLINES=""
 	fi
-	
+
 	$GERBV $IMAGE_SIZE --export=png  --output=$OUTPUTDIR/$NAME.boardoutline.png 			  -f "$OUTLINECOLOR" $GERBER_FOLDER/$NAME.boardoutline.ger
 	$GERBV $IMAGE_SIZE --export=png  --output=$OUTPUTDIR/$NAME.drills.png 		$INCLUDE_OUTLINES -f "#FFFFFF" $GERBER_FOLDER/$NAME.drills.xln
-	
+
 	echo Generating top images
 	$GERBV $IMAGE_SIZE --export=png  --output=$OUTPUTDIR/$NAME.toplayer.png	 	$INCLUDE_OUTLINES -f "$COPPERCOLOR" $GERBER_FOLDER/$NAME.toplayer.ger
 	$GERBV $IMAGE_SIZE --export=png  --output=$OUTPUTDIR/$NAME.topstopmask.png	$INCLUDE_OUTLINES -f "$MASKCOLOR"   $GERBER_FOLDER/$NAME.topstopmask.ger
@@ -187,53 +187,51 @@ for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 	$GERBV $IMAGE_SIZE --export=png  --output=$OUTPUTDIR/$NAME.bottomlayer.png      $INCLUDE_OUTLINES -f "$COPPERCOLOR" $GERBER_FOLDER/$NAME.bottomlayer.ger
 	$GERBV $IMAGE_SIZE --export=png  --output=$OUTPUTDIR/$NAME.bottomstopmask.png 	$INCLUDE_OUTLINES -f "$MASKCOLOR"  $GERBER_FOLDER/$NAME.bottomstopmask.ger
 	$GERBV $IMAGE_SIZE --export=png  --output=$OUTPUTDIR/$NAME.bottomsilkscreen.png $INCLUDE_OUTLINES -f "$SILKSCREENCOLOR" $GERBER_FOLDER/$NAME.bottomsilkscreen.ger
-		
+
 	echo Generating combined top images
 	$GERBV $IMAGE_SIZE --export=png  --output=$OUTPUTDIR/$NAME.board-top.png \
 		$OUTLINE \
 		-f "$DRILLCOLOR" 	$GERBER_FOLDER/$NAME.drills.xln	\
 		-f "$SILKSCREENCOLOR" 	$GERBER_FOLDER/$NAME.topsilkscreen.ger \
 		-f "$MASKCOLOR" 	$GERBER_FOLDER/$NAME.topstopmask.ger \
-		-f "$COPPERCOLOR" 	$GERBER_FOLDER/$NAME.toplayer.ger 
-		
+		-f "$COPPERCOLOR" 	$GERBER_FOLDER/$NAME.toplayer.ger
+
 	echo Generating combined bottom images
 	$GERBV $IMAGE_SIZE --export=png  --output=$OUTPUTDIR/$NAME.board-bottom.png \
 		$OUTLINE \
 		-f "$DRILLCOLOR" 	$GERBER_FOLDER/$NAME.drills.xln	\
 		-f "$SILKSCREENCOLOR" 	$GERBER_FOLDER/$NAME.bottomsilkscreen.ger \
 		-f "$MASKCOLOR" 	$GERBER_FOLDER/$NAME.bottomstopmask.ger \
-		-f "$COPPERCOLOR" 	$GERBER_FOLDER/$NAME.bottomlayer.ger 
+		-f "$COPPERCOLOR" 	$GERBER_FOLDER/$NAME.bottomlayer.ger
 	}
-	
+
 	{ #Generate visual diffs to the current image folders
 	#Check to see if we have existing images
 	#If not, we don't want to try doing any visual diffs
 	if [ "$GEN_VISUAL_DIFFS"=="true" ]; then
 		for image in $(ls $OUTPUTDIR);do
-			if [ -e "$IMAGE_FOLDER/$image" ] && [ -e  "$OUTPUTDIR/$image" ] ;then 
+			if [ -e "$IMAGE_FOLDER/$image" ] && [ -e  "$OUTPUTDIR/$image" ] ;then
 				echo "Generating diff for $image"
-				#use ImageMagick to generate a visual diff. Old objects will be red, new placements will be blue. 
+				#use ImageMagick to generate a visual diff. Old objects will be red, new placements will be blue.
 				#Thanks to EMSL for finding this!
 				$IMAGEMAGICK_COMPOSITE -stereo 0  $OUTPUTDIR/$image $IMAGE_FOLDER/$image $OUTPUTDIR/$image.diff
 			fi
 		done
 	fi
-	
+
 	#Save a lot of time and effort on making proper names with ugly hacks like this
 	rename 's/\.png\.diff$/.diff.png/' $OUTPUTDIR/*
 	}
-	
+
 	{ #move the generated images to the output folder
 		#This will over write our current set of images, which is fine since they're saved in Git
 		#TODO might possibly need an -f to overwrite in batch mode.
 		mv $OUTPUTDIR/*.png $IMAGE_FOLDER/
 		rmdir  $OUTPUTDIR
 	}
-done	
+done
 
 #Add the new images, which the post-commit will amend to this one. During pre-commit, you're not allowed to add additional files
-#git add $IMAGE_FOLDER 
+#git add $IMAGE_FOLDER
 #Pass post commit some data. It will add these files in during the post-commit
 echo $IMAGE_FOLDER >.git_amend_data
-
-	

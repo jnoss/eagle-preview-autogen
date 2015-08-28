@@ -11,11 +11,7 @@ if [ -e .git_amend_data ] ;then
 	#Add generated images to last commit, and avoid re-running the generation script that we just included
 	git add $IMAGE_FOLDER/*
 	git commit --amend -C HEAD --no-verify
-	
+
 	echo Images added
 fi
 exit
-	
-
-
-
