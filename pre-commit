@@ -22,7 +22,7 @@ if ! $IMAGEMAGICK_COMPOSITE -version;then
 fi
 
 #Specify the sub-folders to put images in
-IMAGE_FOLDER=gerber-previews
+IMAGE_FOLDER=gerber-previews    #TODO: make subdir in each folder that a board is in
 GERBER_FOLDER=gerber-files
 
 #Set colors, must fit gerber "#RRGGBB" or "#RRGGBBAA" format, where AA is the alpha transparency
@@ -60,8 +60,10 @@ if [ ! -e $GERBER_FOLDER ];then mkdir $GERBER_FOLDER || { echo "Could not find g
 for BOARD in $(git status -s|grep "^[ AM]*.*\.brd" |sed 's/^[ AM]* //');do
 	echo Processing $BOARD
 
-	BOARD=$(basename $BOARD)
-	NAME=$(basename $BOARD .brd)
+	# BOARD=$(basename $BOARD) #comment this out to leave BOARD the full path
+	DIRPATH=$(dirname $BOARD)
+	# NAME=$(basename $BOARD .brd)
+	NAME=$(echo $BOARD | sed 's/\//_SLASH_/' )
 
 	#For generating visual diffs, we need both new and old versions to exist, so generate a folder to put them in
 	OUTPUTDIR=$(mktemp -d -t visualdiff-outputdir) #add the -t to make this work on mac
