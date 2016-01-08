@@ -63,7 +63,7 @@ for BOARD in $(git status -s|grep "^[AM].*\.brd" |sed 's/^[ AM]* //');do
 	# BOARD=$(basename $BOARD) #comment this out to leave BOARD the full path
 	DIRPATH=$(dirname $BOARD)
 	# NAME=$(basename $BOARD .brd)
-	NAME=$(echo $BOARD | sed 's/\//_SLASH_/' )
+	NAME=$(echo $BOARD | sed 's/\//_SLASH_/g' )
 
 	#For generating visual diffs, we need both new and old versions to exist, so generate a folder to put them in
 	OUTPUTDIR=$(mktemp -d -t visualdiff-outputdir) #add the -t to make this work on mac
