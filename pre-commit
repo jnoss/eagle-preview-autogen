@@ -1,5 +1,6 @@
 #!/bin/bash
-
+# EAGLE board auto-preview generator git hook
+# requirements: imagemagick, rename
 
 ##################################
 ## START OF USER ADJUSTABLE VALUES
